@@ -1,0 +1,118 @@
+#ifndef __KP_ABE_H__
+#define __KP_ABE_H__
+
+#include "circuit.h"
+
+struct PublicKey {
+  const G1 g;
+  const GT Y;
+  const vector<G1> T;
+
+  PublicKey(const G1& g, const GT& Y, const vector<G1>& T) : g(g), Y(Y), T(T) { }
+};
+
+struct MasterKey {
+  const G1 g;
+  const Zr y;
+  const vector<Zr> t;
+
+  MasterKey(const G1& g, const Zr& y, const vector<Zr>& t) : g(g), y(y), t(t) { }
+};
+
+struct CipherText {
+  const vector<long> attributes;
+  const G1 gs;
+  const GT ct;
+  const vector<G1> cts;
+
+  CipherText(const vector<long>& attributes, const G1& gs, const GT& ct, const vector<G1>& cts) : attributes(attributes), gs(gs), ct(ct), cts(cts) { }
+};
+
+struct DecryptionKey {
+  const shared_ptr<Gate> circuit;
+  const map<shared_ptr<Input>, G1> dks;
+
+  DecryptionKey(const shared_ptr<Gate>& circuit, const map<shared_ptr<Input>, G1>& dks) : circuit(circuit), dks(dks) { }
+};
+
+struct Controller {
+  const int n;
+  const Pairing& e;
+
+  Controller(const int& n, const Pairing& e) : n(n), e(e) { }
+
+  pair<PublicKey, MasterKey> setup() const {
+    const Zr y(e, true);
+    vector<Zr> t;
+    t.reserve(n);
+    for (int i = 0; i < n; i++) {
+      t.emplace_back(e, true);
+    }
+    const G1 g(e, false);
+    const GT Y = e(g, g) ^ y;
+    vector<G1> T;
+    T.reserve(n);
+    for (int i = 0; i < n; i++) {
+      T.push_back(g ^ t[i]);
+    }
+    return make_pair(PublicKey(g, Y, T), MasterKey(g, y, t));
+  }
+
+  CipherText encrypt(const GT& m, const vector<long>& attributes, const PublicKey& pk) const {
+    const Zr s(e, true);
+    const GT ct = m * (pk.Y ^ s);
+    vector<G1> cts;
+    cts.reserve(n);
+    for (int i = 0; i < n; i++) {
+      cts.push_back(pk.T[i] ^ s);
+    }
+    return CipherText(attributes, pk.g ^ s, ct, cts);
+  }
+
+  DecryptionKey keygen(const shared_ptr<Gate>& circuit, const MasterKey& mk) const {
+    map<shared_ptr<Input>, G1> dks;
+
+    function<void(const shared_ptr<Node>&, const Zr&)> dfs = [&](auto node, auto secret) {
+      const auto gate = dynamic_pointer_cast<Gate>(node);
+      if (gate) {
+        const auto secrets = gate->share(e, secret);
+        for (const auto& [input, share] : secrets) {
+          dfs(input, share);
+        }
+      } else {
+        const auto input = dynamic_pointer_cast<Input>(node);
+        dks[input] = mk.g ^ secret / mk.t[input->attribute];
+      }
+    };
+
+    dfs(circuit, mk.y);
+    return DecryptionKey(circuit, dks);
+  }
+
+  pair<bool, GT> decrypt(const CipherText& ct, const DecryptionKey& dk) const {
+    function<pair<bool, GT>(const shared_ptr<Node>&)> dfs = [&](auto node) {
+      const auto gate = dynamic_pointer_cast<Gate>(node);
+      if (gate) {
+        map<shared_ptr<Node>, pair<bool, GT>> results;
+        for (const auto& input : gate->inputs) {
+          results[input] = dfs(input);
+        }
+        return gate->reconstruct(e, results);
+      } else {
+        const auto input = dynamic_pointer_cast<Input>(node);
+        if (ranges::find(ct.attributes, input->attribute) != ct.attributes.end()) {
+          return make_pair(true, e(dk.dks.at(input), ct.cts[input->attribute]));
+        }
+        return make_pair(false, GT(e, true));
+      }
+    };
+
+    const auto result = dfs(dk.circuit);
+    if (result.first) {
+      return make_pair(true, ct.ct / result.second);
+    }
+    return result;
+  }
+};
+
+#endif

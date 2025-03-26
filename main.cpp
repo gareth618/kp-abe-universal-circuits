@@ -1,5 +1,4 @@
-#include <bits/stdc++.h>
-using namespace std;
+#include "kp_abe.h"
 
 int main() {
   return 0;
