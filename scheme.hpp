@@ -1,7 +1,7 @@
-#ifndef __KP_ABE_H__
-#define __KP_ABE_H__
+#ifndef __SCHEME_H__
+#define __SCHEME_H__
 
-#include "circuit.h"
+#include "circuit.hpp"
 
 struct PublicKey {
   const G1 g;
@@ -35,24 +35,24 @@ struct DecryptionKey {
   DecryptionKey(const shared_ptr<Gate>& circuit, const map<shared_ptr<Input>, G1>& dks) : circuit(circuit), dks(dks) { }
 };
 
-struct Controller {
-  const int n;
+struct KPABE {
+  const int attribute_count;
   const Pairing& e;
 
-  Controller(const int& n, const Pairing& e) : n(n), e(e) { }
+  KPABE(const int& attribute_count, const Pairing& e) : attribute_count(attribute_count), e(e) { }
 
   pair<PublicKey, MasterKey> setup() const {
     const Zr y(e, true);
     vector<Zr> t;
-    t.reserve(n);
-    for (int i = 0; i < n; i++) {
+    t.reserve(attribute_count);
+    for (int i = 0; i < attribute_count; i++) {
       t.emplace_back(e, true);
     }
     const G1 g(e, false);
     const GT Y = e(g, g) ^ y;
     vector<G1> T;
-    T.reserve(n);
-    for (int i = 0; i < n; i++) {
+    T.reserve(attribute_count);
+    for (int i = 0; i < attribute_count; i++) {
       T.push_back(g ^ t[i]);
     }
     return make_pair(PublicKey(g, Y, T), MasterKey(g, y, t));
@@ -62,8 +62,8 @@ struct Controller {
     const Zr s(e, true);
     const GT ct = m * (pk.Y ^ s);
     vector<G1> cts;
-    cts.reserve(n);
-    for (int i = 0; i < n; i++) {
+    cts.reserve(attribute_count);
+    for (int i = 0; i < attribute_count; i++) {
       cts.push_back(pk.T[i] ^ s);
     }
     return CipherText(attributes, pk.g ^ s, ct, cts);
