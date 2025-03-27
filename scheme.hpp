@@ -30,9 +30,9 @@ struct CipherText {
 
 struct DecryptionKey {
   const shared_ptr<Gate> circuit;
-  const map<shared_ptr<Input>, G1> dks;
+  const vector<G1> dks;
 
-  DecryptionKey(const shared_ptr<Gate>& circuit, const map<shared_ptr<Input>, G1>& dks) : circuit(circuit), dks(dks) { }
+  DecryptionKey(const shared_ptr<Gate>& circuit, const vector<G1>& dks) : circuit(circuit), dks(dks) { }
 };
 
 struct KPABE {
@@ -70,7 +70,7 @@ struct KPABE {
   }
 
   DecryptionKey keygen(const shared_ptr<Gate>& circuit, const MasterKey& mk) const {
-    map<shared_ptr<Input>, G1> dks;
+    vector<G1> dks;
 
     function<void(const shared_ptr<Node>&, const Zr&)> dfs = [&](auto node, auto secret) {
       const auto gate = dynamic_pointer_cast<Gate>(node);
@@ -81,7 +81,7 @@ struct KPABE {
         }
       } else {
         const auto input = dynamic_pointer_cast<Input>(node);
-        dks[input] = mk.g ^ secret / mk.t[input->attribute];
+        dks.push_back(mk.g ^ secret / mk.t[input->attribute]);
       }
     };
 
@@ -90,6 +90,8 @@ struct KPABE {
   }
 
   pair<bool, GT> decrypt(const CipherText& ct, const DecryptionKey& dk) const {
+    int i = 0;
+
     function<pair<bool, GT>(const shared_ptr<Node>&)> dfs = [&](auto node) {
       const auto gate = dynamic_pointer_cast<Gate>(node);
       if (gate) {
@@ -102,7 +104,7 @@ struct KPABE {
       } else {
         const auto input = dynamic_pointer_cast<Input>(node);
         if (ranges::find(ct.attributes, input->attribute) != ct.attributes.end()) {
-          return make_pair(true, e(dk.dks.at(input), ct.cts[input->attribute]));
+          return make_pair(true, e(dk.dks[i++], ct.cts[input->attribute]));
         }
         return make_pair(false, GT(e, true));
       }
