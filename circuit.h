@@ -15,8 +15,8 @@ struct Gate : Node {
 
   Gate(const vector<shared_ptr<Node>>& inputs) : inputs(inputs) { }
 
-  map<shared_ptr<Node>, Zr> share(const Pairing& e, const Zr& secret) const;
-  pair<bool, GT> reconstruct(const Pairing& e, const map<shared_ptr<Node>, pair<bool, GT>>& results) const;
+  vector<Zr> share(const Pairing& e, const Zr& secret) const;
+  pair<bool, GT> reconstruct(const Pairing& e, const vector<pair<bool, GT>>& results) const;
 };
 
 struct Input : Node {

@@ -76,8 +76,8 @@ struct Controller {
       const auto gate = dynamic_pointer_cast<Gate>(node);
       if (gate) {
         const auto secrets = gate->share(e, secret);
-        for (const auto& [input, share] : secrets) {
-          dfs(input, share);
+        for (int i = 0; i < int(secrets.size()); i++) {
+          dfs(gate->inputs[i], secrets[i]);
         }
       } else {
         const auto input = dynamic_pointer_cast<Input>(node);
@@ -93,9 +93,10 @@ struct Controller {
     function<pair<bool, GT>(const shared_ptr<Node>&)> dfs = [&](auto node) {
       const auto gate = dynamic_pointer_cast<Gate>(node);
       if (gate) {
-        map<shared_ptr<Node>, pair<bool, GT>> results;
+        vector<pair<bool, GT>> results;
+        results.reserve(gate->inputs.size());
         for (const auto& input : gate->inputs) {
-          results[input] = dfs(input);
+          results.push_back(dfs(input));
         }
         return gate->reconstruct(e, results);
       } else {
