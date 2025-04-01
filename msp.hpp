@@ -23,10 +23,10 @@ struct MSP {
 struct MatrixMSP : MSP {
   const vector<int> labels;
   const vector<vector<Zr>> matrix;
-  const function<vector<int>(const vector<bool>&)> fun_solve;
+  const vector<vector<Zr>> solutions;
 
-  MatrixMSP(const Pairing& e, const int& party_count, const vector<int>& labels, const vector<vector<int>>& matrix, const function<vector<int>(const vector<bool>&)>& solve)
-    : MSP(e, party_count), labels(labels), matrix(make_matrix(e, matrix)), fun_solve(solve) { }
+  MatrixMSP(const Pairing& e, const int& party_count, const vector<int>& labels, const vector<vector<int>>& matrix, const vector<vector<int>>& solutions)
+    : MSP(e, party_count), labels(labels), matrix(make_zr(e, matrix)), solutions(make_zr(e, solutions)) { }
 
   pair<int, int> size() const {
     return make_pair(matrix.size(), matrix[0].size());
@@ -48,22 +48,31 @@ struct MatrixMSP : MSP {
   }
 
   vector<Zr> solve(const vector<bool>& active) const {
-    const auto solution = fun_solve(active);
-    vector<Zr> zr_solution;
-    zr_solution.reserve(solution.size());
-    for (const auto& value : solution) {
-      zr_solution.emplace_back(e, long(value));
+    const auto [rows, _cols] = size();
+    for (const auto& solution : solutions) {
+      bool ok = true;
+      for (int i = 0; i < rows; i++) {
+        if (solution[i] != Zr(e, 0L) && !active[i]) {
+          ok = false;
+          break;
+        }
+      }
+      if (ok) {
+        return solution;
+      }
     }
-    return zr_solution;
+    return vector<Zr>();
   }
 
 private:
-  static vector<vector<Zr>> make_matrix(const Pairing& e, const vector<vector<int>>& matrix) {
-    const auto [rows, cols] = make_pair(int(matrix.size()), int(matrix[0].size()));
-    vector zr_matrix(rows, vector<Zr>(cols));
-    for (int i = 0; i < rows; i++) {
-      for (int j = 0; j < cols; j++) {
-        zr_matrix[i][j] = Zr(e, long(matrix[i][j]));
+  static vector<vector<Zr>> make_zr(const Pairing& e, const vector<vector<int>>& matrix) {
+    vector<vector<Zr>> zr_matrix;
+    zr_matrix.reserve(matrix.size());
+    for (const auto& row : matrix) {
+      zr_matrix.emplace_back();
+      zr_matrix.back().reserve(row.size());
+      for (const auto& value : row) {
+        zr_matrix.back().emplace_back(e, long(value));
       }
     }
     return zr_matrix;

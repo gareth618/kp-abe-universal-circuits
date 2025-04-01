@@ -48,18 +48,11 @@ int main() {
     vector({0, 0, 0, 0, 1}),
     vector({0, 0, 0, 1, 0}),
     vector({1, 1, 1, 0, 0}),
-  }), [](const vector<bool>& active) {
-    if (active[0] && active[1]) {
-      return vector({1, 1, 0, 0, 0});
-    }
-    if (active[1] && active[2] && active[3]) {
-      return vector({0, 1, 1, 0, 0});
-    }
-    if (active[2] && active[3] && active[4]) {
-      return vector({0, 0, 1, 1, 1});
-    }
-    return vector<int>();
-  }), vector({v3_node1, v3_node2, v3_node3, v3_node4}));
+  }), vector({
+    vector({1, 1, 0, 0, 0}),
+    vector({0, 1, 1, 0, 0}),
+    vector({0, 0, 1, 1, 1}),
+  })), vector({v3_node1, v3_node2, v3_node3, v3_node4}));
 
   test(v3_node5, set({0, 1}), true);
   test(v3_node5, set({1, 2}), true);
