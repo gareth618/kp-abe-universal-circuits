@@ -22,12 +22,12 @@ struct MasterKey {
 };
 
 struct CipherText {
-  const vector<int> attributes;
+  const set<int> attributes;
   const G1 gs;
   const GT ct;
   const vector<G1> cts;
 
-  CipherText(const vector<int>& attributes, const G1& gs, const GT& ct, const vector<G1>& cts)
+  CipherText(const set<int>& attributes, const G1& gs, const GT& ct, const vector<G1>& cts)
     : attributes(attributes), gs(gs), ct(ct), cts(cts) { }
 };
 
@@ -63,7 +63,7 @@ struct KPABE {
     return make_pair(PublicKey(g, Y, T), MasterKey(g, y, t));
   }
 
-  CipherText encrypt(const GT& m, const vector<int>& attributes, const PublicKey& pk) const {
+  CipherText encrypt(const GT& m, const set<int>& attributes, const PublicKey& pk) const {
     const Zr s(e, true);
     const GT ct = m * (pk.Y ^ s);
     vector<G1> cts;
@@ -109,7 +109,7 @@ struct KPABE {
       } else {
         const auto input = dynamic_pointer_cast<Input>(node);
         i++;
-        if (ranges::find(ct.attributes, input->attribute) != ct.attributes.end()) {
+        if (ct.attributes.count(input->attribute)) {
           return make_pair(true, e(dk.dks[i], ct.cts[input->attribute]));
         }
         return make_pair(false, GT(e, true));

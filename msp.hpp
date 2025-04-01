@@ -23,9 +23,10 @@ struct MSP {
 struct MatrixMSP : MSP {
   const vector<int> labels;
   const vector<vector<Zr>> matrix;
+  const function<vector<int>(const vector<bool>&)> fun_solve;
 
-  MatrixMSP(const Pairing& e, const int& party_count, const vector<int>& labels, const vector<vector<int>>& matrix)
-    : MSP(e, party_count), labels(labels), matrix(make_matrix(e, matrix)) { }
+  MatrixMSP(const Pairing& e, const int& party_count, const vector<int>& labels, const vector<vector<int>>& matrix, const function<vector<int>(const vector<bool>&)>& solve)
+    : MSP(e, party_count), labels(labels), matrix(make_matrix(e, matrix)), fun_solve(solve) { }
 
   pair<int, int> size() const {
     return make_pair(matrix.size(), matrix[0].size());
@@ -44,6 +45,16 @@ struct MatrixMSP : MSP {
       }
     }
     return result;
+  }
+
+  vector<Zr> solve(const vector<bool>& active) const {
+    const auto solution = fun_solve(active);
+    vector<Zr> zr_solution;
+    zr_solution.reserve(solution.size());
+    for (const auto& value : solution) {
+      zr_solution.emplace_back(e, long(value));
+    }
+    return zr_solution;
   }
 
 private:
