@@ -20,6 +20,7 @@ struct Gate : Node {
     Zr sum(e, 0L);
     for (int j = 0; j < cols - 1; j++) {
       random[j] = Zr(e, true);
+      sum += random[j];
     }
     random[cols - 1] = secret - sum;
     return msp->dot(random);
@@ -47,7 +48,7 @@ private:
   static vector<shared_ptr<Node>> make_inputs(const shared_ptr<MSP>& msp, const vector<shared_ptr<Node>>& parties) {
     const auto [rows, _cols] = msp->size();
     vector<shared_ptr<Node>> inputs;
-    inputs.reserve(msp->party_count);
+    inputs.reserve(rows);
     for (int i = 0; i < rows; i++) {
       inputs.push_back(parties[msp->label(i)]);
     }

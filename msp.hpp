@@ -73,13 +73,11 @@ struct OrMSP : MSP {
 
   vector<Zr> dot(const vector<Zr>& row) const {
     const auto [rows, cols] = size();
-    vector<Zr> result(rows, Zr(e, 0L));
-    for (int i = 0; i < rows; i++) {
-      for (int j = 0; j < cols; j++) {
-        result[i] += row[j];
-      }
+    Zr sum(e, 0L);
+    for (int j = 0; j < cols; j++) {
+      sum += row[j];
     }
-    return result;
+    return vector(rows, sum);
   }
 
   vector<Zr> solve(const vector<bool>& active) const {
