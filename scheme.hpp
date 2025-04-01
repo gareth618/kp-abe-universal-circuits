@@ -20,12 +20,12 @@ struct MasterKey {
 };
 
 struct CipherText {
-  const vector<long> attributes;
+  const vector<int> attributes;
   const G1 gs;
   const GT ct;
   const vector<G1> cts;
 
-  CipherText(const vector<long>& attributes, const G1& gs, const GT& ct, const vector<G1>& cts) : attributes(attributes), gs(gs), ct(ct), cts(cts) { }
+  CipherText(const vector<int>& attributes, const G1& gs, const GT& ct, const vector<G1>& cts) : attributes(attributes), gs(gs), ct(ct), cts(cts) { }
 };
 
 struct DecryptionKey {
@@ -58,7 +58,7 @@ struct KPABE {
     return make_pair(PublicKey(g, Y, T), MasterKey(g, y, t));
   }
 
-  CipherText encrypt(const GT& m, const vector<long>& attributes, const PublicKey& pk) const {
+  CipherText encrypt(const GT& m, const vector<int>& attributes, const PublicKey& pk) const {
     const Zr s(e, true);
     const GT ct = m * (pk.Y ^ s);
     vector<G1> cts;

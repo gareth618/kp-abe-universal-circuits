@@ -1,4 +1,4 @@
-#include "kp_abe.h"
+#include "scheme.hpp"
 
 int main() {
   return 0;
