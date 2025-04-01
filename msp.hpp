@@ -14,7 +14,9 @@ struct MSP {
   virtual pair<int, int> size() const = 0;
   virtual int label(const int& i) const = 0;
   virtual long at(const int& i, const int& j) const = 0;
+
   virtual Zr dot(const Pairing& e, const int& i, const vector<Zr>& row) const = 0;
+  virtual vector<Zr> solve(const Pairing& e, const vector<bool>& active) const = 0;
 };
 
 struct MatrixMSP : MSP {
@@ -66,6 +68,18 @@ struct OrMSP : MSP {
     }
     return sum;
   }
+
+  vector<Zr> solve(const Pairing& e, const vector<bool>& active) {
+    const auto rows = size().first;
+    for (int i = 0; i < rows; i++) {
+      if (active[i]) {
+        vector<Zr> solution(rows, Zr(e, 0L));
+        solution[i] = Zr(e, 1L);
+        return solution;
+      }
+    }
+    return vector<Zr>();
+  }
 };
 
 struct AndMSP : MSP {
@@ -85,6 +99,16 @@ struct AndMSP : MSP {
 
   Zr dot(const Pairing& e, const int& i, const vector<Zr>& row) const {
     return row[i];
+  }
+
+  vector<Zr> solve(const Pairing& e, const vector<bool>& active) {
+    const auto rows = size().first;
+    for (int i = 0; i < rows; i++) {
+      if (!active[i]) {
+        return vector<Zr>();
+      }
+    }
+    return vector<Zr>(rows, Zr(e, 1L));
   }
 };
 

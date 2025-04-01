@@ -30,6 +30,21 @@ struct Gate : Node {
   }
 
   pair<bool, GT> reconstruct(const Pairing& e, const vector<pair<bool, GT>>& results) const {
+    const auto& [rows, cols] = msp->size();
+    vector<bool> active;
+    active.reserve(rows);
+    for (int i = 0; i < rows; i++) {
+      active.push_back(results[i].first);
+    }
+    const auto solution = msp->solve(e, active);
+    if (solution.empty()) {
+      return make_pair(false, GT(e, true));
+    }
+    GT result(e, true);
+    for (int i = 0; i < rows; i++) {
+      result *= results[i].second ^ solution[i];
+    }
+    return make_pair(true, result);
   }
 
 private:
