@@ -8,7 +8,8 @@ struct PublicKey {
   const GT Y;
   const vector<G1> T;
 
-  PublicKey(const G1& g, const GT& Y, const vector<G1>& T) : g(g), Y(Y), T(T) { }
+  PublicKey(const G1& g, const GT& Y, const vector<G1>& T)
+    : g(g), Y(Y), T(T) { }
 };
 
 struct MasterKey {
@@ -16,7 +17,8 @@ struct MasterKey {
   const Zr y;
   const vector<Zr> t;
 
-  MasterKey(const G1& g, const Zr& y, const vector<Zr>& t) : g(g), y(y), t(t) { }
+  MasterKey(const G1& g, const Zr& y, const vector<Zr>& t)
+    : g(g), y(y), t(t) { }
 };
 
 struct CipherText {
@@ -25,21 +27,24 @@ struct CipherText {
   const GT ct;
   const vector<G1> cts;
 
-  CipherText(const vector<int>& attributes, const G1& gs, const GT& ct, const vector<G1>& cts) : attributes(attributes), gs(gs), ct(ct), cts(cts) { }
+  CipherText(const vector<int>& attributes, const G1& gs, const GT& ct, const vector<G1>& cts)
+    : attributes(attributes), gs(gs), ct(ct), cts(cts) { }
 };
 
 struct DecryptionKey {
   const shared_ptr<Gate> circuit;
   const vector<G1> dks;
 
-  DecryptionKey(const shared_ptr<Gate>& circuit, const vector<G1>& dks) : circuit(circuit), dks(dks) { }
+  DecryptionKey(const shared_ptr<Gate>& circuit, const vector<G1>& dks)
+    : circuit(circuit), dks(dks) { }
 };
 
 struct KPABE {
-  const int attribute_count;
   const Pairing& e;
+  const int attribute_count;
 
-  KPABE(const int& attribute_count, const Pairing& e) : attribute_count(attribute_count), e(e) { }
+  KPABE(const Pairing& e, const int& attribute_count)
+    : attribute_count(attribute_count), e(e) { }
 
   pair<PublicKey, MasterKey> setup() const {
     const Zr y(e, true);
@@ -76,7 +81,7 @@ struct KPABE {
       const auto gate = dynamic_pointer_cast<Gate>(node);
       if (gate) {
         const auto secrets = gate->share(e, secret);
-        for (int i = 0; i < int(secrets.size()); i++) {
+        for (int i = 0; i < int(gate->inputs.size()); i++) {
           dfs(gate->inputs[i], secrets[i]);
         }
       } else {

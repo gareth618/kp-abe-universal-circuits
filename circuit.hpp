@@ -11,32 +11,28 @@ struct Gate : Node {
   const shared_ptr<MSP> msp;
   const vector<shared_ptr<Node>> inputs;
 
-  Gate(const shared_ptr<MSP>& msp, const vector<shared_ptr<Node>>& parties) : msp(msp), inputs(make_inputs(parties)) { }
+  Gate(const shared_ptr<MSP>& msp, const vector<shared_ptr<Node>>& parties)
+    : msp(msp), inputs(make_inputs(msp, parties)) { }
 
   vector<Zr> share(const Pairing& e, const Zr& secret) const {
-    const auto& [rows, cols] = msp->size();
+    const auto [_rows, cols] = msp->size();
     vector<Zr> random(cols);
     Zr sum(e, 0L);
     for (int j = 0; j < cols - 1; j++) {
       random[j] = Zr(e, true);
     }
     random[cols - 1] = secret - sum;
-    vector<Zr> secrets;
-    secrets.reserve(rows);
-    for (int i = 0; i < rows; i++) {
-      secrets.push_back(msp->dot(e, i, random));
-    }
-    return secrets;
+    return msp->dot(random);
   }
 
   pair<bool, GT> reconstruct(const Pairing& e, const vector<pair<bool, GT>>& results) const {
-    const auto& [rows, cols] = msp->size();
+    const auto [rows, _cols] = msp->size();
     vector<bool> active;
     active.reserve(rows);
     for (int i = 0; i < rows; i++) {
       active.push_back(results[i].first);
     }
-    const auto solution = msp->solve(e, active);
+    const auto solution = msp->solve(active);
     if (solution.empty()) {
       return make_pair(false, GT(e, true));
     }
@@ -48,10 +44,11 @@ struct Gate : Node {
   }
 
 private:
-  vector<shared_ptr<Node>> make_inputs(const vector<shared_ptr<Node>>& parties) {
+  static vector<shared_ptr<Node>> make_inputs(const shared_ptr<MSP>& msp, const vector<shared_ptr<Node>>& parties) {
+    const auto [rows, _cols] = msp->size();
     vector<shared_ptr<Node>> inputs;
     inputs.reserve(msp->party_count);
-    for (int i = 0; i < msp->size().first; i++) {
+    for (int i = 0; i < rows; i++) {
       inputs.push_back(parties[msp->label(i)]);
     }
     return inputs;
@@ -61,7 +58,8 @@ private:
 struct Input : Node {
   const int attribute;
 
-  Input(int attribute) : attribute(attribute) { }
+  Input(int attribute)
+    : attribute(attribute) { }
 };
 
 #endif
