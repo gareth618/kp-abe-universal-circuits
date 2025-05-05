@@ -59,5 +59,28 @@ int main() {
   test(v3_node5, set({2, 3}), true);
   test(v3_node5, set({0, 3, 4}), false);
   test(v3_node5, set({1, 3}), false);
+
+  const shared_ptr<Node> v4_node1 = make_shared<Input>(0);
+  const shared_ptr<Node> v4_node2 = make_shared<Input>(1);
+  const shared_ptr<Node> v4_node3 = make_shared<Input>(2);
+  const shared_ptr<Node> v4_node4 = make_shared<Input>(3);
+  const shared_ptr<Node> v4_node5 = make_shared<Input>(4);
+  const shared_ptr<Node> v4_node6 = make_shared<Input>(5);
+  const shared_ptr<Node> v4_node7 = make_shared<Gate>(make_shared<MatrixMSP>(e, 4, vector({0, 1, 2, 2, 3}), vector({
+    vector({0, 0, 0, 0, 1}),
+    vector({1, 1, 1, 1, 0}),
+    vector({0, 0, 0, 0, 1}),
+    vector({0, 0, 0, 1, 0}),
+    vector({1, 1, 1, 0, 0}),
+  }), vector({
+    vector({1, 1, 0, 0, 0}),
+    vector({0, 1, 1, 0, 0}),
+    vector({0, 0, 1, 1, 1}),
+  })), vector({v4_node1, v4_node2, v4_node3, v4_node4}));
+  const shared_ptr<Node> v4_node8 = make_shared<Gate>(make_shared<OrMSP>(e, 2), vector({v4_node3, v4_node5}));
+  const shared_ptr<Gate> v4_node9 = make_shared<Gate>(make_shared<AndMSP>(e, 3), vector({v4_node7, v4_node8, v4_node6}));
+
+  test(v4_node9, set({0, 2, 3, 5}), true);
+  test(v4_node9, set({1, 2, 4}), false);
   return 0;
 }

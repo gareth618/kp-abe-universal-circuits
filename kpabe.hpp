@@ -63,9 +63,9 @@ struct KPABE {
     return make_pair(PublicKey(g, Y, T), MasterKey(g, y, t));
   }
 
-  CipherText encrypt(const GT& m, const set<int>& attributes, const PublicKey& pk) const {
+  CipherText encrypt(const GT& pt, const set<int>& attributes, const PublicKey& pk) const {
     const Zr s(e, true);
-    const GT ct = m * (pk.Y ^ s);
+    const GT ct = pt * (pk.Y ^ s);
     vector<G1> cts;
     cts.reserve(attribute_count);
     for (int i = 0; i < attribute_count; i++) {
