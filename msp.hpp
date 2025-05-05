@@ -16,7 +16,7 @@ struct MSP {
   virtual pair<int, int> size() const = 0;
   virtual int label(const int& i) const = 0;
 
-  virtual vector<Zr> dot(const vector<Zr>& row) const = 0;
+  virtual vector<Zr> dot(const vector<Zr>& col) const = 0;
   virtual vector<Zr> solve(const vector<bool>& active) const = 0;
 };
 
@@ -36,12 +36,12 @@ struct MatrixMSP : MSP {
     return labels[i];
   }
 
-  vector<Zr> dot(const vector<Zr>& row) const {
+  vector<Zr> dot(const vector<Zr>& col) const {
     const auto [rows, cols] = size();
     vector<Zr> result(rows, Zr(e, 0L));
     for (int i = 0; i < rows; i++) {
       for (int j = 0; j < cols; j++) {
-        result[i] += matrix[i][j] * row[j];
+        result[i] += matrix[i][j] * col[j];
       }
     }
     return result;
@@ -91,11 +91,11 @@ struct OrMSP : MSP {
     return i;
   }
 
-  vector<Zr> dot(const vector<Zr>& row) const {
+  vector<Zr> dot(const vector<Zr>& col) const {
     const auto [rows, cols] = size();
     Zr sum(e, 0L);
     for (int j = 0; j < cols; j++) {
-      sum += row[j];
+      sum += col[j];
     }
     return vector(rows, sum);
   }
@@ -125,8 +125,8 @@ struct AndMSP : MSP {
     return i;
   }
 
-  vector<Zr> dot(const vector<Zr>& row) const {
-    return row;
+  vector<Zr> dot(const vector<Zr>& col) const {
+    return col;
   }
 
   vector<Zr> solve(const vector<bool>& active) const {
@@ -137,6 +137,75 @@ struct AndMSP : MSP {
       }
     }
     return vector<Zr>(rows, Zr(e, 1L));
+  }
+};
+
+struct ThresholdMSP : MSP {
+  const int threshold;
+
+  ThresholdMSP(const Pairing& e, const int& party_count, const int& threshold)
+    : MSP(e, party_count), threshold(threshold) { }
+
+  pair<int, int> size() const {
+    return make_pair(party_count, threshold);
+  }
+
+  int label(const int& i) const {
+    return i;
+  }
+
+  vector<Zr> dot(const vector<Zr>& col) const {
+    const auto [rows, cols] = size();
+    vector<Zr> result(rows, Zr(e, 0L));
+    for (int i = 0; i < rows; i++) {
+      Zr power(e, 1L);
+      for (int j = 0; j < cols; j++) {
+        result[i] += power * col[j];
+        power *= Zr(e, long(i + 1));
+      }
+    }
+    return result;
+  }
+
+  vector<Zr> solve(const vector<bool>& active) const {
+    const auto [rows, cols] = size();
+    vector<int> active_rows;
+    for (int i = 0; i < rows; i++) {
+      if (active[i]) {
+        active_rows.push_back(i);
+        if (int(active_rows.size()) == cols) {
+          break;
+        }
+      }
+    }
+    if (int(active_rows.size()) < cols) {
+      return vector<Zr>();
+    }
+    ifstream pairing_in("pairing.param");
+    string p;
+    pairing_in >> p >> p >> p >> p >> p >> p >> p >> p;
+    pairing_in.close();
+    ofstream temp_out("temp.txt");
+    temp_out << cols << ' ' << p << '\n';
+    for (const auto& i : active_rows) {
+      long power = 1;
+      for (int j = 0; j < cols; j++) {
+        temp_out << power << " \n"[j == cols - 1];
+        power *= i + 1;
+      }
+    }
+    temp_out.close();
+    system("python3.11 threshold.py");
+    ifstream temp_in("temp.txt");
+    vector<Zr> solution(rows, Zr(e, 0L));
+    for (const auto& i : active_rows) {
+      long value;
+      temp_in >> value;
+      solution[i] = Zr(e, value);
+    }
+    temp_in.close();
+    system("rm temp.txt");
+    return solution;
   }
 };
 

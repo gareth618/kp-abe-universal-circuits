@@ -82,5 +82,16 @@ int main() {
 
   test(v4_node9, set({0, 2, 3, 5}), true);
   test(v4_node9, set({1, 2, 4}), false);
+
+  const shared_ptr<Node> v5_node1 = make_shared<Input>(0);
+  const shared_ptr<Node> v5_node2 = make_shared<Input>(1);
+  const shared_ptr<Node> v5_node3 = make_shared<Input>(2);
+  const shared_ptr<Node> v5_node4 = make_shared<Input>(3);
+  const shared_ptr<Node> v5_node5 = make_shared<Input>(4);
+  const shared_ptr<Gate> v5_node6 = make_shared<Gate>(make_shared<ThresholdMSP>(e, 5, 3), vector({v5_node1, v5_node2, v5_node3, v5_node4, v5_node5}));
+
+  test(v5_node6, set({2, 4}), false);
+  test(v5_node6, set({0, 1, 3}), true);
+  test(v5_node6, set({0, 1, 3, 4}), true);
   return 0;
 }
