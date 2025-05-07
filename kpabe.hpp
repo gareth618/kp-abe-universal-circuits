@@ -25,9 +25,9 @@ struct CipherText {
   const set<int> attributes;
   const G1 gs;
   const GT ct;
-  const vector<G1> cts;
+  const map<int, G1> cts;
 
-  CipherText(const set<int>& attributes, const G1& gs, const GT& ct, const vector<G1>& cts)
+  CipherText(const set<int>& attributes, const G1& gs, const GT& ct, const map<int, G1>& cts)
     : attributes(attributes), gs(gs), ct(ct), cts(cts) { }
 };
 
@@ -66,10 +66,9 @@ struct KPABE {
   CipherText encrypt(const GT& pt, const set<int>& attributes, const PublicKey& pk) const {
     const Zr s(e, true);
     const GT ct = pt * (pk.Y ^ s);
-    vector<G1> cts;
-    cts.reserve(attribute_count);
-    for (int i = 0; i < attribute_count; i++) {
-      cts.push_back(pk.T[i] ^ s);
+    map<int, G1> cts;
+    for (const auto& attribute : attributes) {
+      cts[attribute] = pk.T[attribute] ^ s;
     }
     return CipherText(attributes, pk.g ^ s, ct, cts);
   }
@@ -110,7 +109,7 @@ struct KPABE {
         const auto input = dynamic_pointer_cast<Input>(node);
         i++;
         if (ct.attributes.count(input->attribute)) {
-          return make_pair(true, e(dk.dks[i], ct.cts[input->attribute]));
+          return make_pair(true, e(dk.dks[i], ct.cts.at(input->attribute)));
         }
         return make_pair(false, GT(e, true));
       }
