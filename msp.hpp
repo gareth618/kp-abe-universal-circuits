@@ -195,7 +195,7 @@ struct ThresholdMSP : MSP {
       }
     }
     temp_out.close();
-    system("python3.11 threshold.py");
+    system("python threshold.py");
     ifstream temp_in("temp.txt");
     vector<Zr> solution(rows, Zr(e, 0L));
     for (const auto& i : active_rows) {
